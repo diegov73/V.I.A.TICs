@@ -1,0 +1,140 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+\setlength{\headheight}{14pt} 
+
+\renewcommand{\headrulewidth}{0.5mm}
+
+\fancyhead[R]{\uppercase{\leftmark}}
+\fancyhead[L]{\textit{\nouppercase{\rightmark}}}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+    
+    \begin{titlepage}
+        
+        \centering
+        
+        \includegraphics[width=0.8\textwidth]{logo_UDP.png}\\[0.6cm]
+
+        \textsc{\LARGE Universidad Diego Portales}\\[0.2cm]
+        \textsc{\large Facultad de ingenieria y ciencias}\\[1.5cm]
+
+        \rule{\linewidth}{0.5mm}\\[0.4cm]
+        {\huge \bfseries Informe proyectos TIC's}\\[0.1cm]
+        {\huge \bfseries V.I.A.}\\[0.1cm]
+        {\huge \bfseries Visual Inteligence Assistant}\\[0.2cm]
+        \rule{\linewidth}{0.5mm}\\[1.5cm]
+        
+        \textbf{Integrantes:} \\
+        Camila Valencia \\
+        Renato Riveros \\
+        Cristobal \\
+        Diego Valdés\\[0.6cm]
+
+        \textbf{Profesor:}\\
+        Nicolas Boetcher\\[0.6cm]
+
+        \textsc{\large Viernes 17 de abril}
+
+        \vfill
+
+    \end{titlepage}
+
+    \newpage
+    \markboth{}{}
+    \tableofcontents
+    \newpage
+
+    \section{Introducción}
+    La entrada de la IA en la vida cotidiana sumada a la conectividad presente, abre la puerta al desarrollo de dispositivos inteligentes.
+
+    Lamentablemente este potencial tecnologico esta centralizado, disponible casi en su totalidad para la población normativa, ignorando a ciertos grupos que forman parte de nuestra sociedad. Dirigir este desarrollo hacia herramientas
+    que faciliten su forma de vivir disminuirá esta brecha latente.
+
+    Este proyecto propone el desarrollo de un disposivo IoT de manos libres, enfocado en la asistencia y reconocimiento del entorno para las personas ciegas, llamado Visual Integence Assistant (V.I.A.) cuyo objetivo es aprovechar
+    la tecnogia disponible, mejorando el entendimiento del entorno en estas personas.
+
+    Para el desarrollo de este herramienta se creo el presente informe, que detalla el funcionamiento de la propuesta tecnologica, el estado del arte de las soluciones actuales disponibles, los posibles desafios tecnicos, ademas del plan necesario
+    para la correcta implementación del dispositivo. 
+
+
+    \newpage
+    \section{Descripción del problema}
+    Hoy gran parte de la autonomia de la personas ciegas y parcialmente videntes recae en su baston, este le entrega información a traves de sonidos y tacto sobre la superficie sobre la cual esta avanzando, otra herramienta util la tienen
+    en su telefono personal, gracias a aplicaciones capaces de identificar etiquetas de alimentos, fechas de vencimiento o semaforos en la via publica. Ademas de la clasica videollamada con familiares o amigos para recibir ayuda al momento de comprar,
+    esto en caso de que los mismos no esten presenetes fisicamente.
+
+    Sin embargo, estas herramientas presentan algunas limitaciones, una de ellas es que son restrictivas entre si, es decir una persona ciega dificilmente puede estar analizando su entorno con el baston a la vez que sostiene un celular, lo que limita su
+    capacidad de moverse adecuandamente.
+
+    Por lo mencionado anteriormente surge la necesidad del desarrollo de un sistema que no comprometa su movilidad, que es ampliamente respaldada por su baston, esto da lugar a V.I.A. un dispositivo capaz de proporisonar el soporte visual que necesita, asi como la deteccion
+    de objetos a traves de un sensor laser que busca complementar a la información recopilada por su baston.
+
+    \newpage
+    \section{Motivación}
+    Aportar a una problematica social a la vez que le brindamos una solución aprovechando avances tecnologicos de la IA, equipos IoT, sensores, etc
+
+
+    \newpage
+    \section{objetivo}
+    Mejorar la autonomia y la calidad de vida de las personas ciegas
+
+    \newpage
+    \section{Grupo y roles}
+    A continuación se describen los roles de cada uno de los integrantes del equipo, estos roles se mantendrán a lo largo de la ejecución del proyecto. Los roles son los siguientes:
+
+    \begin{itemize}
+        \item\textbf{Desarrolador: Diego Valdés} será responsable de la programación y ensamblaje del controlador ESP-32 y sus sensores.
+        \item\textbf{Coordinador: Camila Valencia}
+        \item\textbf{Documentación: Cristobal gonzalez}
+        \item\textbf{Investigador: Renato Riveros}
+    \end{itemize}
+
+
+    \newpage
+    \section{Estado del arte}
+    En el mercado actual se encuentran diversas soluciones para la asistencia de personas ciegas, estas se dividen es analogicas, biologicas y tecnologicas. A continuación se detallarán las mas relevantes de estas opciones.
+    
+    \subsection{Biologicas:}
+    Perros guias: Una de las soluciones mas completas para este tipo de personas ya que avisa de obstaculos, localiza puertas, asientos, escaleras, entre otras cosas fundamentales para la navegación en lugares publicos y sirven de apollo emocional,
+    el coste de entrega para el usuario es cero, sin embargo este debe correr con el alimento y gastos asociados al animal, sin embargo su coste de entrenamiento es alto y su disponibilidad baja.  Visitar perrosguia.cl
+
+    \subsection{Analogicas:}
+    Baston: el clasico baston 
+
+    OrCam MyEye: Se comercializa en Chile por un valor aproximado de 7.568.990, Es un dispositivo de visión artificial que se acopla a los lentes para leer texto y reconocer rostros. Su elevado precio representa la mayor barrera de entrada para el usuario promedio en Chile.
+
+    WeWalk Smart Cane: Un bastón electrónico con sensores ultrasónicos para detectar obstáculos elevados y navegación GPS integrada. Tiene un precio internacional de 599 USD, requiere conectividad constante para sus funciones de navegación.
+
+    Lentes eSight: Utilizados para potenciar la baja visión mediante pantallas internas de alta resolución. Su costo de adquisición ronda los 7.000 USD, lo que los sitúa en el segmento de alta gama inaccesible para la mayoría de los beneficiarios de la ley de inclusión en Chile.
+
+    Seeing AI (Microsoft): Es una aplicación gratuita altamente efectiva para reconocer textos, billetes y rostros. Su gran desventaja operativa es que obliga al usuario a sostener el celular con una mano, bloqueando un sentido táctil fundamental y exponiéndolo a riesgos de seguridad o caídas.
+
+    Asistencia Remota (Be My Eyes): Conecta al usuario mediante videollamada con voluntarios videntes que pueden ayudar en tareas específicas como verificar la fecha de vencimiento de un alimento o leer una pantalla.
+
+Reconocimiento y OCR (Envision AI / Seeing AI): Utilizan Inteligencia Artificial para leer textos impresos en más de 60 idiomas, describir escenas visuales, identificar colores, rostros de amigos y escanear códigos de barras de productos.
+
+    \newpage
+    \section{Tentativa de diseño}
+    describir imagenes generadas por la ia
+
+    \newpage
+    \section{Riegos}
+    SACAR LAS IDEAS DE LA PRESENTACION Y BUSCAR MAS
+
+
+    \newpage
+    \section{Plan de trabajo}
+
+
+\end{document}
