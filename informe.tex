@@ -94,10 +94,10 @@
     A continuación se describen los roles de cada uno de los integrantes del equipo, estos roles se mantendrán a lo largo de la ejecución del proyecto. Los roles son los siguientes:
 
     \begin{itemize}
-        \item\textbf{Desarrolador: Diego Valdés} será responsable de la programación y ensamblaje del controlador ESP-32 y sus sensores.
-        \item\textbf{Coordinador: Camila Valencia}
-        \item\textbf{Documentación: Cristobal gonzalez}
-        \item\textbf{Investigador: Renato Riveros}
+        \item\textbf{Desarrolador: Diego Valdés} será responsable de la programación y ensamblaje del controlador ESP-32 y sus sensores. En la fase actual del proyecto debe velar por la selección de los componentes.
+        \item\textbf{Coordinador: Camila Valencia} 
+        \item\textbf{Documentación: Cristobal gonzalez} estará enfocado en la documentación de la problematica asi como del codigo que se desarrolará, garantizando que esta facilite la escalabilidad de la solución.
+        \item\textbf{Investigador: Renato Riveros} su responsabilidad será actuar como el puente entre el problema y la vialbilidad técnica del mismo, en esta fase inicial validará los datos oficiales y estudios, asegurando que la solución responda efectivamente a la problematica.
     \end{itemize}
 
 
@@ -105,24 +105,28 @@
     \section{Estado del arte}
     En el mercado actual se encuentran diversas soluciones para la asistencia de personas ciegas, estas se dividen es analogicas, biologicas y tecnologicas. A continuación se detallarán las mas relevantes de estas opciones.
     
-    \subsection{Biologicas:}
-    Perros guias: Una de las soluciones mas completas para este tipo de personas ya que avisa de obstaculos, localiza puertas, asientos, escaleras, entre otras cosas fundamentales para la navegación en lugares publicos y sirven de apollo emocional,
-    el coste de entrega para el usuario es cero, sin embargo este debe correr con el alimento y gastos asociados al animal, sin embargo su coste de entrenamiento es alto y su disponibilidad baja.  Visitar perrosguia.cl
+        \subsection{Biologicas:}
+            \textbf{Perros guias:} Una de las soluciones mas completas para este tipo de personas ya que avisa de obstaculos, localiza puertas, asientos, escaleras, entre otras cosas fundamentales para la navegación en lugares publicos y sirven de apollo emocional,
+            el coste de entrega para el usuario es cero, sin embargo este debe correr con el alimento y gastos asociados al animal, sin embargo su coste de entrenamiento es alto y su disponibilidad baja.  Visitar perrosguia.cl
 
-    \subsection{Analogicas:}
-    Baston: el clasico que ha siempre ha acompañado a los ciegos, este los ayuda a identificar desniveles y objetos en su camino a traves del simple tacto
+        \subsection{Analogicas:}
+            \textbf{Baston:} el clasico que ha siempre ha acompañado a los ciegos, este los ayuda a identificar desniveles y objetos en su camino a traves del simple tacto.
 
-    OrCam MyEye: Se comercializa en Chile por un valor aproximado de 7.568.990, Es un dispositivo de visión artificial que se acopla a los lentes para leer texto y reconocer rostros. Su elevado precio representa la mayor barrera de entrada para el usuario promedio en Chile.
+        \subsection{Tecnologicas:}
+            \textbf{OrCam MyEye:} Es un dispositivo que se acopla a los lentes del usuario, este se activa por comandos de voz y es capaz de trasmitir en forma de audio información visual en tiempo real y sin conección wifi. Braille Chile es su distribuidor oficial en el pais y nuevo tiene un coste de 7.5 millones de pesos iva incluido.
+            La duración de su bateria esta limitida a 2 horas de uso, esto debido a su monitoreo continuo.
 
-    WeWalk Smart Cane: Un bastón electrónico con sensores ultrasónicos para detectar obstáculos elevados y navegación GPS integrada. Tiene un precio internacional de 599 USD, requiere conectividad constante para sus funciones de navegación.
+            \textbf{WeWalk Smart Cane:} Un bastón electrónico con sensores ultrasónicos para detectar obstáculos elevados y navegación GPS integrada. Su versión mas moderna, con asistencia de IA cuesta 1350 dolares segun su pagina oficial. Incluye 4 años de IA y de navegación guiada, estas funciones requieren conección a internet.
 
-    Lentes eSight: Utilizados para potenciar la baja visión mediante pantallas internas de alta resolución. Su costo de adquisición ronda los 7.000 USD, lo que los sitúa en el segmento de alta gama inaccesible para la mayoría de los beneficiarios de la ley de inclusión en Chile.
+            \textbf{Lentes eSight:} Utilizados para potenciar la baja visión mediante pantallas internas de alta resolución. Su costo de adquisición es de 4.950 USD\@. Esta enfocado para personas con ceguera legal, es decir que, no es util para las personas con seguera total.
 
-    Seeing AI (Microsoft): Es una aplicación gratuita altamente efectiva para reconocer textos, billetes y rostros. Su gran desventaja operativa es que obliga al usuario a sostener el celular con una mano, bloqueando un sentido táctil fundamental y exponiéndolo a riesgos de seguridad o caídas.
+            \textbf{Seeing AI:} Es una aplicación gratuita altamente efectiva para reconocer textos, billetes y rostros. Su gran desventaja operativa es que obliga al usuario a sostener el celular con una mano, bloqueando un sentido táctil fundamental y exponiéndolo a riesgos de seguridad o caídas. Tambien requiere de una conección a internet.
 
-    Asistencia Remota (Be My Eyes): Conecta al usuario mediante videollamada con voluntarios videntes que pueden ayudar en tareas específicas como verificar la fecha de vencimiento de un alimento o leer una pantalla.
+            \textbf{Be My Eyes:} Conecta al usuario mediante videollamada con voluntarios videntes que pueden ayudar en tareas específicas como verificar la fecha de vencimiento de un alimento o leer una pantalla. Es costo cero pero requiere la voluntad de un tercero.
 
-Reconocimiento y OCR (Envision AI / Seeing AI): Utilizan Inteligencia Artificial para leer textos impresos en más de 60 idiomas, describir escenas visuales, identificar colores, rostros de amigos y escanear códigos de barras de productos.
+        Como se puede apreciar las alternativas tecnologicas disponibles se dividen en dos grupos, las que incluyen un dispositivo dedicado, manos libres, ofrecen grandes prestaciones pero poseen un alto costo, mientras que las aplicaciones moviles son gratuitas, aunque obligan al usuario a usar el telefono con sus manos, lo que limita su movilidad efectiva y puede ser un riesgo en la via publica.
+
+        En este contexto, V.I.A se ubica como una de solución que sintetiza conceptos ya existentes, ya aprobadas por el mercado, en una solución manos libres a bajo costo que, espera mejorar la vida y autonomia de personas no videntes sin importat su status.
 
     \newpage
     \section{Tentativa de diseño}
