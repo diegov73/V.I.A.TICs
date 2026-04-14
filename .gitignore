@@ -1,0 +1,10 @@
+#archivos auxiliares de tex
+*.aux
+*.latexmk
+*.fls
+*.log
+*.synctex.gz
+*.out
+*.toc
+*.lof
+*.lot
