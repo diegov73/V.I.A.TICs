@@ -24,7 +24,7 @@
         
         \centering
         
-        \includegraphics[width=0.8\textwidth]{logo_UDP.png}\\[0.6cm]
+        \includegraphics[width=0.8\textwidth]{imagenes/logo_UDP.png}\\[0.6cm]
 
         \textsc{\LARGE Universidad Diego Portales}\\[0.2cm]
         \textsc{\large Facultad de ingenieria y ciencias}\\[1.5cm]
@@ -107,14 +107,14 @@
     \section{Estado del arte}
     En el mercado actual se encuentran diversas soluciones para la asistencia de personas ciegas, estas se dividen es analogicas, biologicas y tecnologicas. A continuación se detallarán las mas relevantes de estas opciones.
     
-        \subsection{Biologicas:}
+        \subsection{Biologicas}:
             \textbf{Perros guias:} Una de las soluciones mas completas para este tipo de personas ya que avisa de obstaculos, localiza puertas, asientos, escaleras, entre otras cosas fundamentales para la navegación en lugares publicos y sirven de apollo emocional,
             el coste de entrega para el usuario es cero, sin embargo este debe correr con el alimento y gastos asociados al animal, sin embargo su coste de entrenamiento es alto y su disponibilidad baja.  Visitar perrosguia.cl
 
-        \subsection{Analogicas:}
+        \subsection{Analogicas}:
             \textbf{Baston:} el clasico que ha siempre ha acompañado a los ciegos, este los ayuda a identificar desniveles y objetos en su camino a traves del simple tacto.
 
-        \subsection{Tecnologicas:}
+        \subsection{Tecnologicas}:
             \textbf{OrCam MyEye:} Es un dispositivo que se acopla a los lentes del usuario, este se activa por comandos de voz y es capaz de trasmitir en forma de audio información visual en tiempo real y sin conección wifi. Braille Chile es su distribuidor oficial en el pais y nuevo tiene un coste de 7.5 millones de pesos iva incluido.
             La duración de su bateria esta limitida a 2 horas de uso, esto debido a su monitoreo continuo.
 
@@ -136,22 +136,26 @@
 
         \subsection{\textbf{V.I.A. glasses}}
 
-            \includegraphics[width=0.6\textwidth]{VIAglasses.jpeg}
+            \includegraphics[width=0.6\textwidth]{imagenes/VIAglasses.jpeg}
 
             Como se puede apreciar en este arte conceptual ambos sensores irán la parte frontal de un lente, los cables de alimentación y de transmisión de datos viajarán a traves de una de las varillas del lente, estos cables estarán conectados a una especie de mochila que contiene al esp32 y a las baterias del mismo. Uno de los desafios de este modelo, es que la cantidad de cables necesarios para el modulo
             de la camara y puede incomodo para su usuario.
 
         \subsection{\textbf{V.I.A. Beanie}}
-            \includegraphics[width=0.6\textwidth]{VIAbeanie.jpeg}
+            \includegraphics[width=0.6\textwidth]{imagenes/VIAbeanie.jpeg}
 
             Incorporar el controlador esp32 junto a ambos sensores y baterias en un solo gorro es posible, sin embargo este modelo poseé el incoveniente respecto a la posición de la camara, en su inclinación vertical como en su orientación frontal. 
 
     Durante el desarrollo de este proyecto de buscará dar soluciones a estas problematicas tecnicas.
     \newpage
     \section{Riegos}
-    SACAR LAS IDEAS DE LA PRESENTACION Y BUSCAR MAS
+    Para asegurar la viavilidad del proyecto, se han identificado areas que pueden representar desafios capaces de comprometer el correcto desarrollo, aqui se expondrán alguno riesgos y sus posibles soluciones.
 
+        \subsection{Hardware:}El principal factor de riesgo en este ambito es la falla de los sensores, se intentará prevenir en la etapa de ensamblaje, soldando los componetes e implementado pruebas intensivas, tambien.
 
+        \subsection{Software:}La latencia presente una gran problematica, por lo tanto esta prevista la compresión de la imagen, asi como un limite en los token que usará la IA por foto, limitando asi su respuesta y dismiyendo la latencia.
+
+        \subsection{Usuario:}Por muy perfecto que sea el producto el usuario puede simplemente rechazarlo al no parecerle comodo, buscamos mitigar este problema a través de pruebas reales en etapas tempranas del proyecto. 
     \newpage
     \section{Plan de trabajo}
 
