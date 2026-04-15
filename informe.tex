@@ -5,6 +5,8 @@
 \usepackage{parskip}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -134,14 +136,14 @@
     \section{Tentativa de diseño}
     A continuación se describirá las propuestas conceptuales de como se deberia materializar V.I.A.
 
-        \subsection{\textbf{V.I.A. glasses}}
+        \subsection{V.I.A. glasses}
 
             \includegraphics[width=0.6\textwidth]{imagenes/VIAglasses.jpeg}
 
             Como se puede apreciar en este arte conceptual ambos sensores irán la parte frontal de un lente, los cables de alimentación y de transmisión de datos viajarán a traves de una de las varillas del lente, estos cables estarán conectados a una especie de mochila que contiene al esp32 y a las baterias del mismo. Uno de los desafios de este modelo, es que la cantidad de cables necesarios para el modulo
             de la camara y puede incomodo para su usuario.
 
-        \subsection{\textbf{V.I.A. Beanie}}
+        \subsection{V.I.A. Beanie}
             \includegraphics[width=0.6\textwidth]{imagenes/VIAbeanie.jpeg}
 
             Incorporar el controlador esp32 junto a ambos sensores y baterias en un solo gorro es posible, sin embargo este modelo poseé el incoveniente respecto a la posición de la camara, en su inclinación vertical como en su orientación frontal. 
@@ -158,6 +160,55 @@
         \subsection{Usuario:}Por muy perfecto que sea el producto el usuario puede simplemente rechazarlo al no parecerle comodo, buscamos mitigar este problema a través de pruebas reales en etapas tempranas del proyecto. 
     \newpage
     \section{Plan de trabajo}
+    El cronograma de nuestro proyecto se divide de forma general en 3 etapas en donde cada una consta de varias tareas ordenadas de una manera en que el tiempo de trabajo se aproveche al máximo teniendo plazos claros de entrega y mitigando el peligro de que exista algún retraso. A continuación se detallan las tareas y las etapas que se realizarán a lo largo del proyecto.
 
+---
+
+\subsection*{Abril: Inicio y presentación de ideas para el proyecto}
+
+\begin{itemize}
+    \item\textbf{Toma Requerimientos (1 de abril hasta 6 de abril):} Se realizan reuniones con fundaciones para tomar datos y consideraciones sobre el público al que queremos llegar.
+    
+    \item\textbf{Pruebas unitarias (6 de abril hasta 12 de abril):} Necesitamos saber qué tecnologías nos permite realizar y cumplir los requerimientos propuestos por lo que se hacen pruebas individuales a los elementos que vamos a usar (API, microcontrolador, módulos, sensores, etc).
+    
+    \item\textbf{Cotización y compras de componentes (6 de abril hasta 12 de abril):} Sabiendo lo que podemos y necesitamos realizar se compran el microcontrolador y sensores que utilizaremos.
+    
+    \item\textbf{Prototipo aplicación (12 de abril hasta 19 de abril):} Se presenta la idea de cómo se verá y cómo funcionará la aplicación que se creará.
+    
+    \item\textbf{Armado circuito electrónico (12 de abril hasta 19 de abril):} Se arma en una protoboard el circuito para conocer las conexiones que llevará y poder determinar qué tentativa de diseño vamos a utilizar.
+    
+    \item\textbf{Programación microcontrolador (26 de abril hasta 3 de mayo):} Se le asignan las funciones para procesar los datos de entrada de los sensores y determinar las acciones que debe realizar en base a estos.
+    
+    \item \textbf{Configuración de la API (26 de abril hasta 3 de mayo):} Una vez seleccionada la API se le dan las instrucciones para procesar la imagen y la base sobre lo que debe señalar además de asignarle una configuración para que sea más rápida la comunicación.
+\end{itemize}
+
+\subsection*{Mayo: Configuración y programación de software}
+
+\begin{itemize}
+    \item\textbf{Configuración text to speech (3 de mayo hasta 10 de mayo):} Se programa la función en donde el texto que devuelve la IA se transcribe a un audio y este es enviado al audífono para ser reproducido.
+    
+    \item\textbf{Programar aplicación (3 de mayo hasta 17 de mayo):} Se programará la aplicación móvil en donde esta tendrá principalmente las preferencias del usuario sobre la IA (estilo de voz, volumen, guardar consultas, etc).
+    
+    \item\textbf{Diseño prototipo físico (3 de mayo hasta 17 de mayo):} Se presentan ideas de cómo se vería todo físicamente ensamblado y así elegir el más cómodo y viable en términos de que la conexión no se interrumpa o no interrumpan al usuario.
+    
+    \item\textbf{Pruebas de flujo completo (10 de mayo hasta 17 de mayo):} Previo al ensamblado se prueba que todo el hardware y software funcione correctamente y no existan errores de conexión o comunicación entre dispositivos.
+    
+    \item\textbf{Ensamblar hardware (17 de mayo hasta 24 de mayo):} Una vez elegido el prototipo a utilizar y las pruebas de flujo estén completas con éxito se puede proceder a armar y montar todo.
+    
+    \item\textbf{Pruebas preliminares (24 de mayo hasta 31 de mayo):} Con el hardware ensamblado se empiezan las pruebas básicas para reconocer incomodidades o posibles problemas y/o errores y poder corregirlos.
+\end{itemize}
+
+\subsection*{Junio: Pruebas y pulir detalles}
+
+\begin{itemize}
+    \item\textbf{Pruebas de campo (1 de junio hasta 7 de junio):} La idea de esta tarea es poder facilitar un dispositivo a un usuario real y poder obtener un feedback conciso para después entregar una solución más completa.
+    
+    \item\textbf{Ajustes post feedback (7 de junio hasta 21 de junio):} Luego de obtener el feedback se realizan los ajustes necesarios satisfaciendo y resolviendo los problemas o sugerencias que nos dio el usuario.
+    
+    \item\textbf{Presentación final (29 de junio):} Ya resueltos todos los problemas del dispositivo y seguros que la solución y dispositivo presentado no tiene errores a nivel lógico y está bien diseñado a nivel físico lo presentamos en la feria de proyectos.
+\end{itemize}
+
+\vspace{1em}
+\noindent Con este cronograma se tiene una visión clara de lo que se va a realizar dentro del plazo para completar el proyecto con metas y etapas específicas, esto entregar una solución robusta y completa hacia el público que queremos llegar y poder solucionar esta problemática que estamos abarcando.
 
 \end{document}
