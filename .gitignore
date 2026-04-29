@@ -1,16 +1,13 @@
-# --- PlatformIO (Carpeta firmware) ---
+# --- PlatformIO ---
 firmware/.pio/
-firmware/.gcc-flags.json
 firmware/.vscode/
+firmware/.gcc-flags.json
 
-# --- LaTeX (Documentación) ---
-*.aux
-*.fdb_latexmk
-*.fls
-*.log
-*.synctex.gz
-*.toc
-*.out
-
-# --- Otros ---
-.DS_Store
+# --- LaTeX (Documentación en la subcarpeta) ---
+docs/*.aux
+docs/*.fdb_latexmk
+docs/*.fls
+docs/*.log
+docs/*.synctex.gz
+docs/*.toc
+docs/*.out
