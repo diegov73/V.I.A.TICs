@@ -1,4 +1,9 @@
-# Archivos auxiliares de LaTeX
+# --- PlatformIO (Carpeta firmware) ---
+firmware/.pio/
+firmware/.gcc-flags.json
+firmware/.vscode/
+
+# --- LaTeX (Documentación) ---
 *.aux
 *.fdb_latexmk
 *.fls
@@ -6,5 +11,6 @@
 *.synctex.gz
 *.toc
 *.out
-*.lof
-*.lot
+
+# --- Otros ---
+.DS_Store

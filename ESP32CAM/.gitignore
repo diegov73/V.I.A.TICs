@@ -1,0 +1,19 @@
+# PlatformIO
+.pio/
+.gcc-flags.json
+.clang-format
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Archivos de compilación y temporales
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+
+# Librerías instaladas por dependencias (opcional, pero recomendado)
+# Esto obliga a que PlatformIO las descargue basándose en tu platformio.ini
+.pio/libdeps/
