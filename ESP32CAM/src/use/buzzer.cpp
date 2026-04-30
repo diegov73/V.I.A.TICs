@@ -10,3 +10,10 @@ void beep(int duration) {
     delay(duration);
     digitalWrite(BUZZER_PIN, LOW);
 }
+
+void playTone(int frequency, int duration) {
+    ledcAttachPin(BUZZER_PIN, 0);
+    ledcWriteTone(0, frequency);
+    delay(duration);
+    ledcWriteTone(0, 0);
+}

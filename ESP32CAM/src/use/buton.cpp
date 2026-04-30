@@ -7,6 +7,5 @@ void initButton() {
 }
 
 bool isButtonPressed() {
-    // Retorna true solo si el pin cae a LOW (botón presionado)
     return (digitalRead(BUTTON_PIN) == LOW);
 }

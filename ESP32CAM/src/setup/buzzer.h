@@ -3,9 +3,10 @@
 
 #include <Arduino.h>
 
-#define BUZZER_PIN 16
+#define BUZZER_PIN 21
 
 void initBuzzer();
-void beep(int duration = 100);
+void beep(int duration);
+void playTone(int frequency, int duration);
 
 #endif

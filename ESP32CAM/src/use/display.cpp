@@ -7,8 +7,8 @@
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64 
 
-#define I2C_SDA 14
-#define I2C_SCL 15
+#define I2C_SDA 19
+#define I2C_SCL 18
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
@@ -31,9 +31,13 @@ bool initDisplay() {
   return true;
 }
 
-void showMessage(String text) {
-  display.clearDisplay(); 
-  display.setCursor(0, 0); 
-  display.println(text);   
+void show(int line, String text) {
+  int y = line * 10; 
+
+  display.setTextColor(SSD1306_WHITE, SSD1306_BLACK); 
+
+  display.setCursor(0, y);
+  display.println(text); 
+  
   display.display();
 }

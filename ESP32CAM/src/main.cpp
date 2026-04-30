@@ -4,11 +4,14 @@
 #include "setup/server.h"
 #include "setup/display.h"
 #include "setup/buton.h"
+#include "setup/buzzer.h"
+#include "setup/laser.h"
 
 const char* ssid = "Catalina";
 const char* pswd = "Cata141592";
 
-bool estado;
+bool ultimoEstadoBoton = false;
+int pressed = 0;
 
 void setup(){
   Serial.begin(115200);
@@ -17,40 +20,40 @@ void setup(){
   Serial.println("ESP32-cam activo");
 
   initDisplay();
-  showMessage("pantalla inicializada");
-  delay(200);
-  
-  initFlash();
-  showMessage("flash");
-  delay(200);
-
   initButton();
-  estado = isButtonPressed();
-  showMessage("inicio boton estado:" + estado);
+  initBuzzer();
+  initLaser();
+  
   delay(200);
-
   connectWifi(ssid, pswd);
-
-
-  delay(1000);
-  //initCamera()
-
+  
+  
+  //initFlash();
+  //initCamera();
   //startServer();
 }
 
 void loop() {
   //handleWebClient();
+  bool actualEstadoBoton = isButtonPressed();
+  int dist = getDistance();
 
-  int fotos = 5;
-  int intervaloMs = 500;
+  Serial.print(dist);
 
-  if(isButtonPressed()){
-    takeBurst(fotos, intervaloMs);
-
-    showMessage("imagenes tomadas: " + String(fotos));
-    delay(3000);
+  if(dist != -1){
+    show(0, "distancia: " + String(dist) + "mm");
+  }
+  
+  if(isButtonPressed() == true && ultimoEstadoBoton == false){
+    pressed = pressed + 1;
+    Serial.println("boton presionado");
   }
 
-  showMessage("Probando OLED...\nSegundos: " + String(millis() / 1000));
-  delay(1000);
+  show(1, "veces pulsado: " + pressed);
+  delay(50);
+  ultimoEstadoBoton = actualEstadoBoton;
+
+  playTone(440, 100);
+
+  delay(500);
 }

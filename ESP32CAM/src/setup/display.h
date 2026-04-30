@@ -5,6 +5,6 @@
 
 bool initDisplay();
 
-void showMessage(String text);
+void show(int line, String text);
 
 #endif
