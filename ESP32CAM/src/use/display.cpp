@@ -25,7 +25,7 @@ bool initDisplay() {
   display.setTextColor(SSD1306_WHITE);
   
   display.setCursor(0, 0);
-  display.println("Pantalla Lista!");
+  display.println("pantalla ok");
   display.display();
   
   return true;

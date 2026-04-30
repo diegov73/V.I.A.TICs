@@ -10,8 +10,15 @@
 const char* ssid = "Catalina";
 const char* pswd = "Cata141592";
 
-bool ultimoEstadoBoton = false;
-int pressed = 0;
+int obtenerIntervalo(int distancia){
+    if(distancia <= 0 || distancia > 1000){
+      return 0; 
+    }
+
+  int intervalo = map(distancia, 50, 1000, 50, 600);
+
+  return constrain(intervalo, 50, 600);
+}
 
 void setup(){
   Serial.begin(115200);
@@ -35,25 +42,19 @@ void setup(){
 
 void loop() {
   //handleWebClient();
-  bool actualEstadoBoton = isButtonPressed();
-  int dist = getDistance();
+  int d = getDistance(); 
+    int msEspera = obtenerIntervalo(d);
 
-  Serial.print(dist);
+    if (msEspera > 0){
+        digitalWrite(BUZZER_PIN, HIGH);
+        delay(40);
+        digitalWrite(BUZZER_PIN, LOW);
+        delay(msEspera); 
+    }
 
-  if(dist != -1){
-    show(0, "distancia: " + String(dist) + "mm");
-  }
-  
-  if(isButtonPressed() == true && ultimoEstadoBoton == false){
-    pressed = pressed + 1;
-    Serial.println("boton presionado");
-  }
-
-  show(1, "veces pulsado: " + pressed);
-  delay(50);
-  ultimoEstadoBoton = actualEstadoBoton;
-
-  playTone(440, 100);
-
-  delay(500);
+    if (d != -1) {
+        show(0, "Dist: " + String(d) + "mm");
+        show(1, "Inter: " + String(msEspera) + "ms");
+    }
 }
+
