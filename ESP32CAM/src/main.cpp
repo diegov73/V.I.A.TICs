@@ -10,6 +10,14 @@
 const char* ssid = "Catalina";
 const char* pswd = "Cata141592";
 
+bool alarmaActiva = false;
+int clicks = 0;
+unsigned long tUltimoClick = 0;
+const int ventana = 400;
+bool ultimoBoton = false;
+
+
+
 int obtenerIntervalo(int distancia){
     if(distancia <= 0 || distancia > 1000){
       return 0; 
@@ -40,21 +48,45 @@ void setup(){
   //startServer();
 }
 
+
+
 void loop() {
   //handleWebClient();
-  int d = getDistance(); 
-    int msEspera = obtenerIntervalo(d);
+  bool actualBoton = isButtonPressed();
+  if(actualBoton && !ultimoBoton){
+    unsigned long tActual = millis();
 
-    if (msEspera > 0){
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(40);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(msEspera); 
+    if(tActual - tUltimoClick < ventana){
+      clicks = clicks + 1;
     }
+    else{
+      clicks = 1;
+    }
+    tUltimoClick = tActual;
 
-    if (d != -1) {
-        show(0, "Dist: " + String(d) + "mm");
-        show(1, "Inter: " + String(msEspera) + "ms");
+    if(clicks == 2){
+      alarmaActiva = !alarmaActiva;
+      clicks = 0;
+      show(2, alarmaActiva ? "alarma: on" : "alarma off");
     }
+    delay(50);
+  }
+  ultimoBoton = actualBoton;
+
+
+  int d = getDistance();
+  int espera = obtenerIntervalo(d);
+
+  if(alarmaActiva && espera > 0){
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(40);
+    digitalWrite(BUZZER_PIN, LOW);
+
+    delay(espera);
+  }
+
+  if(d != -1){
+    show(0, "dist: " + String(d) + "mm");
+  }
 }
 
