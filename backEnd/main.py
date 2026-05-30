@@ -9,7 +9,120 @@ from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
 import uvicorn
+#NUEVOS IMPORT
+from fastapi import FastAPI
+from sqlmodel import SQLModel, Field, Relationship, create_engine, Session, select
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
+from fastapi import HTTPException
+# --- 1. DISEÑO DE TABLAS ---
+class Usuario(SQLModel, table=True):
+    id_usuario: Optional[int] = Field(default=None, primary_key=True)
+    rut: str = Field(unique=True, index=True)
+    nombre: str
+    correo: str = Field(unique=True)
+    contrasena: str
+    edad: int
+    telefono: str
+    mensajes: List["Mensaje"] = Relationship(back_populates="usuario")
 
+class Mensaje(SQLModel, table=True):
+    id_mensaje: Optional[int] = Field(default=None, primary_key=True)
+    texto: str
+    fecha: datetime = Field(default_factory=datetime.now)
+    id_usuario: int = Field(foreign_key="usuario.id_usuario")
+    usuario: Optional[Usuario] = Relationship(back_populates="mensajes")
+
+class LoginRequest(BaseModel):
+    correo: str
+    contrasena: str
+# --- 2. CONFIGURACIÓN DE LA BASE DE DATOS ---
+# Esta wea crea un archivo llamado via.db
+nombre_archivo_db = "via.db"
+url_db = f"sqlite:///{nombre_archivo_db}"
+motor = create_engine(url_db)
+
+# --- 3. CREACIÓN DE LA APLICACIÓN FASTAPI ---
+app = FastAPI()
+
+# Esta instrucción le dice a FastAPI que cree el archivo y las tablas al encenderse
+@app.on_event("startup")
+def iniciar_base_datos():
+    SQLModel.metadata.create_all(motor)
+
+# --- 4.(ENDPOINTS) ---
+@app.get("/")
+def bienvenida():
+    return {"mensaje": "backend ya funcionando y la base de datos fue creada."}
+
+# POST
+@app.post("/registro")
+def registrar_usuario(nuevo_usuario: Usuario):
+    with Session(motor) as session:
+        session.add(nuevo_usuario)
+        session.commit()
+        session.refresh(nuevo_usuario)
+        return {
+            "estado": "exito", 
+            "mensaje": f"¡Usuario {nuevo_usuario.nombre} registrado correctamente!"
+        }
+
+@app.post("/login")
+def iniciar_sesion(credenciales: LoginRequest):
+    with Session(motor) as session:
+        statement = select(Usuario).where(Usuario.correo == credenciales.correo)
+        usuario_db = session.exec(statement).first()
+
+        if usuario_db and usuario_db.contrasena == credenciales.contrasena:
+            return {
+                "estado": "exito",
+                "mensaje": "Login correcto",
+                "datos_usuario": {
+                    "id_usuario": usuario_db.id_usuario,
+                    "nombre": usuario_db.nombre, 
+                    "correo": usuario_db.correo
+                }
+            }
+        else:
+            return {"estado": "error", "mensaje": "Correo o contraseña incorrectos"}
+
+#LOGGEO
+@app.post("/mensaje")
+def recibir_mensaje(mensaje_data: Mensaje):
+    with Session(motor) as session:
+        
+        usuario_existe = session.get(Usuario, mensaje_data.id_usuario)
+
+        
+        if not usuario_existe:
+        
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Error: El usuario con ID {mensaje_data.id_usuario} no existe en la base de datos."
+            )
+
+        
+        session.add(mensaje_data)
+        session.commit()
+        session.refresh(mensaje_data)
+        
+        return {
+            "estado": "exito", 
+            "mensaje_id": mensaje_data.id_mensaje,
+            "propietario": usuario_existe.nombre # Opcional: para confirmar de quién es
+        }
+
+#  MUESTRE EL HISTORIAL EN LA APP SEGUN USUARIO
+@app.get("/historial/{id_usuario}")
+def obtener_historial(id_usuario: int):
+    with Session(motor) as session:
+        # Buscamos todos los mensajes que pertenezcan a ese ID de usuario
+        statement = select(Mensaje).where(Mensaje.id_usuario == id_usuario)
+        resultados = session.exec(statement).all()
+        
+        return resultados
+#FIN NUEVOS CAMBIOS
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -23,13 +136,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- NUEVO: Variables para guardar el estado actual ---
+#  Variables para guardar el estado actual
 ESTADO_ACTUAL = {
     "descripcion": "Esperando la primera conexión del ESP32...",
     "timestamp": 0
 }
 RUTA_ULTIMA_FOTO = "latest.jpg"
-# -----------------------------------------------------
+
 
 def optimizar_desde_bytes(datos_binarios: bytes) -> str:
     img = Image.open(io.BytesIO(datos_binarios))
