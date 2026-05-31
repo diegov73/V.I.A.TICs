@@ -9,47 +9,47 @@ from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
 import uvicorn
-#NUEVOS IMPORT
 from fastapi import FastAPI
-from sqlmodel import SQLModel, Field, Relationship, create_engine, Session, select
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from fastapi import HTTPException
+from supabase import create_client
+#FIN NUEVOS CAMBIOS
+load_dotenv()
 # --- 1. DISEÑO DE TABLAS ---
-class Usuario(SQLModel, table=True):
-    id_usuario: Optional[int] = Field(default=None, primary_key=True)
-    rut: str = Field(unique=True, index=True)
+class UsuarioRequest(BaseModel):
     nombre: str
-    correo: str = Field(unique=True)
+    correo: str
     contrasena: str
-    edad: int
-    telefono: str
-    mensajes: List["Mensaje"] = Relationship(back_populates="usuario")
-
-class Mensaje(SQLModel, table=True):
-    id_mensaje: Optional[int] = Field(default=None, primary_key=True)
-    texto: str
-    fecha: datetime = Field(default_factory=datetime.now)
-    id_usuario: int = Field(foreign_key="usuario.id_usuario")
-    usuario: Optional[Usuario] = Relationship(back_populates="mensajes")
 
 class LoginRequest(BaseModel):
     correo: str
     contrasena: str
-# --- 2. CONFIGURACIÓN DE LA BASE DE DATOS ---
-# Esta wea crea un archivo llamado via.db
-nombre_archivo_db = "via.db"
-url_db = f"sqlite:///{nombre_archivo_db}"
-motor = create_engine(url_db)
 
-# --- 3. CREACIÓN DE LA APLICACIÓN FASTAPI ---
-app = FastAPI()
+class MensajeRequest(BaseModel):
+    texto: str
+    id_usuario: str  # UUID como string
 
-# Esta instrucción le dice a FastAPI que cree el archivo y las tablas al encenderse
-@app.on_event("startup")
-def iniciar_base_datos():
-    SQLModel.metadata.create_all(motor)
+class DispositivoRequest(BaseModel):
+    id_usuario: str
+    nombre: str = 'V.I.A ESP32'
+    bateria: int
+    conectado: bool = False
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+app = FastAPI(title="Servidor de Visión VIA")
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY")
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- 4.(ENDPOINTS) ---
 @app.get("/")
@@ -58,60 +58,33 @@ def bienvenida():
 
 # POST
 @app.post("/registro")
-def registrar_usuario(nuevo_usuario: Usuario):
-    with Session(motor) as session:
-        session.add(nuevo_usuario)
-        session.commit()
-        session.refresh(nuevo_usuario)
-        return {
-            "estado": "exito", 
-            "mensaje": f"¡Usuario {nuevo_usuario.nombre} registrado correctamente!"
-        }
+def registrar_usuario(nuevo_usuario: UsuarioRequest):
+    try:
+        # Verificar si ya existe el correo
+        existente = supabase.table("usuario").select("id").eq("correo", nuevo_usuario.correo).execute()
+        
+        if existente.data:
+            return {"estado": "error", "mensaje": "El correo ya está registrado"}
+        
+        supabase.table("usuario").insert(nuevo_usuario.model_dump()).execute()
+        return {"estado": "exito", "mensaje": f"Usuario {nuevo_usuario.nombre} registrado."}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/login")
 def iniciar_sesion(credenciales: LoginRequest):
-    with Session(motor) as session:
-        statement = select(Usuario).where(Usuario.correo == credenciales.correo)
-        usuario_db = session.exec(statement).first()
+    try:
+        llamada = supabase.table("usuario").select("id", "nombre").eq("correo", credenciales.correo).eq("contrasena", credenciales.contrasena).execute()
 
-        if usuario_db and usuario_db.contrasena == credenciales.contrasena:
-            return {
-                "estado": "exito",
-                "mensaje": "Login correcto",
-                "datos_usuario": {
-                    "id_usuario": usuario_db.id_usuario,
-                    "nombre": usuario_db.nombre, 
-                    "correo": usuario_db.correo
-                }
-            }
+        if llamada.data:
+            return {"estado": "exito", "usuario": llamada.data[0]}
         else:
             return {"estado": "error", "mensaje": "Correo o contraseña incorrectos"}
 
-#LOGGEO
-@app.post("/mensaje")
-def recibir_mensaje(mensaje_data: Mensaje):
-    with Session(motor) as session:
-        
-        usuario_existe = session.get(Usuario, mensaje_data.id_usuario)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        
-        if not usuario_existe:
-        
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Error: El usuario con ID {mensaje_data.id_usuario} no existe en la base de datos."
-            )
-
-        
-        session.add(mensaje_data)
-        session.commit()
-        session.refresh(mensaje_data)
-        
-        return {
-            "estado": "exito", 
-            "mensaje_id": mensaje_data.id_mensaje,
-            "propietario": usuario_existe.nombre # Opcional: para confirmar de quién es
-        }
 
 #  MUESTRE EL HISTORIAL EN LA APP SEGUN USUARIO
 @app.get("/historial/{id_usuario}")
@@ -122,19 +95,7 @@ def obtener_historial(id_usuario: int):
         resultados = session.exec(statement).all()
         
         return resultados
-#FIN NUEVOS CAMBIOS
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-app = FastAPI(title="Servidor de Visión VIA")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 #  Variables para guardar el estado actual
 ESTADO_ACTUAL = {
@@ -162,11 +123,12 @@ def procesar_imagen_en_fondo(img_data: bytes):
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "Actua como guia para un ciego y rellena la siguiente plantilla: peligros:[describir] o objetos relevantes:[listar], obstaculos (si es etiqueta explicala, si es libro leelo)."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "low"}},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "high"}},
                     ],
                 }
             ],
-            max_tokens=100
+            max_tokens=100,
+            temperatura=0
         )
         
         descripcion = response.choices[0].message.content
@@ -210,6 +172,3 @@ def get_latest_image():
         return FileResponse(RUTA_ULTIMA_FOTO)
     return HTTPException(status_code=404, detail="Aún no hay fotos")
 # ----------------------------------------------
-
-if __name__ == '__main__':
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
