@@ -6,6 +6,7 @@
 #include "setup/buton.h"
 #include "setup/buzzer.h"
 #include "setup/laser.h"
+#include <HTTPClient.h>
 
 const char* ssid = "Catalina";
 const char* pswd = "Cata141592";
@@ -52,7 +53,15 @@ void setup(){
 
 void loop() {
   //handleWebClient();
+  unsigned long tActual = millis();
+  
+  if (tActual - tUltimoHeartbeat >= intervaloHeartbeat) {
+    enviarHeartbeat(); // <-- Llamada directa a la función que está en use/server.cpp
+    tUltimoHeartbeat = tActual;
+  }
+
   bool actualBoton = isButtonPressed();
+  
   if(actualBoton && !ultimoBoton){
     unsigned long tActual = millis();
 

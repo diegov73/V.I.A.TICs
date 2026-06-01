@@ -1,53 +1,31 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include "esp_camera.h"
-#include "../setup/server.h"
+#include <HTTPClient.h>    
+#include "setup/server.h"
+#include <WiFi.h>         
 
-WiFiServer server(80);
+const char* serverHeartbeatUrl = "http://TU_IP_DEL_SERVIDOR:8000/esp32/heartbeat";
 
-void startServer() {
-  server.begin();
-  Serial.println("Servidor iniciado.");
-}
-
-void handleWebClient() {
-  WiFiClient client = server.available();
-  if (!client) return;
-
-  String currentLine = "";
-
-  while (client.connected()) {
-    if (client.available()) {
-      char c = client.read();
-
-      if (c == '\n') {
-        if (currentLine.length() == 0) {
-
-          camera_fb_t * fb = esp_camera_fb_get();
-          
-          if (!fb) {
-            client.println("HTTP/1.1 500 Internal Server Error");
-            client.println();
-            break;
-          }
-
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-type: image/jpeg");
-          client.println("Connection: close");
-          client.println();
-          client.write(fb->buf, fb->len);
-          esp_camera_fb_return(fb);
-          break;
+void enviarHeartbeat() {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        
+        // Iniciar la conexión con el endpoint
+        http.begin(serverHeartbeatUrl);
+        http.addHeader("Content-Type", "application/json");
+        
+        // Enviamos un JSON vacío en el cuerpo del POST
+        int httpResponseCode = http.POST("{}");
+        
+        if (httpResponseCode > 0) {
+            Serial.print(" Heartbeat enviado. Código: ");
+            Serial.println(httpResponseCode);
+        } else {
+            Serial.print(" Error en Heartbeat: ");
+            Serial.println(http.errorToString(httpResponseCode).c_str());
         }
         
-        else {
-          currentLine = "";
-        }
-      
-      } else if (c != '\r') {
-        currentLine += c;
-      }
+        http.end(); // Cerramos la conexión para liberar memoria RAM
+    } else {
+        Serial.println(" Heartbeat omitido: Sin conexión WiFi.");
     }
-  }
-  client.stop();
 }
