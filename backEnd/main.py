@@ -159,16 +159,52 @@ async def upload(request: Request, background_tasks: BackgroundTasks):
     background_tasks.add_task(procesar_imagen_en_fondo, img_data)
     return "OK"
 
-# --- NUEVAS RUTAS PARA EL FRONTEND DE REACT ---
 @app.get("/latest-info")
 def get_latest_info():
-    """Devuelve el texto actual y la marca de tiempo"""
+
     return JSONResponse(content=ESTADO_ACTUAL)
 
 @app.get("/latest-image")
 def get_latest_image():
-    """Devuelve el archivo de la última foto si existe"""
+
     if os.path.exists(RUTA_ULTIMA_FOTO):
         return FileResponse(RUTA_ULTIMA_FOTO)
     return HTTPException(status_code=404, detail="Aún no hay fotos")
-# ----------------------------------------------
+
+@app.post("/esp32/heartbeat")
+def esp32_heartbeat():
+    """
+    Endpoint que el ESP32 llamará periódicamente (ej. cada 15 segundos)
+    para notificar que sigue encendido y conectado.
+    """
+    ESTADO_ACTUAL["ultimo_latido"] = time.time()
+    return {"estado": "ok", "mensaje": "Latido recibido"}
+
+
+@app.get("/esp32/status")
+def obtener_estado_esp32():
+    """
+    Endpoint para que la app móvil o web verifique si el dispositivo está online.
+    Si no ha enviado un latido en los últimos 45 segundos, se considera offline.
+    """
+    ahora = time.time()
+    ultimo_latido = ESTADO_ACTUAL["ultimo_latido"]
+    
+    # Margen de tiempo tolerable (ej. si el ESP32 avisa cada 15s, 45s es un buen límite)
+    UMBRAL_OFFLINE_SEGUNDOS = 45 
+    
+    if ultimo_latido == 0.0:
+        activo = False
+        mensaje = "El dispositivo nunca se ha conectado."
+    elif (ahora - ultimo_latido) < UMBRAL_OFFLINE_SEGUNDOS:
+        activo = True
+        mensaje = "Dispositivo activo"
+    else:
+        activo = False
+        mensaje = f"Dispositivo inactivo. Última señal hace {int(ahora - ultimo_latido)} segundos."
+        
+    return {
+        "activo": activo,
+        "mensaje": mensaje,
+        "ultimo_latido_timestamp": ultimo_latido
+    }
