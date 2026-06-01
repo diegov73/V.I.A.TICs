@@ -3,21 +3,19 @@ import io
 import base64
 import time
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse # <-- NUEVO: Importar JSONResponse y FileResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
-from openai import OpenAI
+import google.generativeai as genai
 from dotenv import load_dotenv
 import uvicorn
-from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
-from fastapi import HTTPException
+from typing import Optional
 from supabase import create_client
-#FIN NUEVOS CAMBIOS
+
 load_dotenv()
-# --- 1. DISEÑO DE TABLAS ---
+
+# --- MODELOS ---
 class UsuarioRequest(BaseModel):
     nombre: str
     correo: str
@@ -29,7 +27,7 @@ class LoginRequest(BaseModel):
 
 class MensajeRequest(BaseModel):
     texto: str
-    id_usuario: str  # UUID como string
+    id_usuario: str
 
 class DispositivoRequest(BaseModel):
     id_usuario: str
@@ -37,12 +35,11 @@ class DispositivoRequest(BaseModel):
     bateria: int
     conectado: bool = False
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+class HeartbeatRequest(BaseModel):
+    bateria: Optional[int] = None
+
+# --- APP ---
 app = FastAPI(title="Servidor de Visión VIA")
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_KEY")
-)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,24 +48,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 4.(ENDPOINTS) ---
+# --- CLIENTES ---
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.GenerativeModel("gemini-2.0-flash")
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY")
+)
+
+# --- ESTADO GLOBAL ---
+ESTADO_ACTUAL = {
+    "descripcion": "Esperando la primera conexión del ESP32...",
+    "timestamp": 0,
+    "ultimo_latido": 0.0,
+    "bateria": None
+}
+RUTA_ULTIMA_FOTO = "latest.jpg"
+
+# --- ENDPOINTS USUARIOS ---
 @app.get("/")
 def bienvenida():
-    return {"mensaje": "backend ya funcionando y la base de datos fue creada."}
+    return {"mensaje": "backend funcionando."}
 
-# POST
 @app.post("/registro")
 def registrar_usuario(nuevo_usuario: UsuarioRequest):
     try:
-        # Verificar si ya existe el correo
         existente = supabase.table("usuario").select("id").eq("correo", nuevo_usuario.correo).execute()
-        
         if existente.data:
             return {"estado": "error", "mensaje": "El correo ya está registrado"}
-        
         supabase.table("usuario").insert(nuevo_usuario.model_dump()).execute()
         return {"estado": "exito", "mensaje": f"Usuario {nuevo_usuario.nombre} registrado."}
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -76,123 +85,42 @@ def registrar_usuario(nuevo_usuario: UsuarioRequest):
 def iniciar_sesion(credenciales: LoginRequest):
     try:
         llamada = supabase.table("usuario").select("id", "nombre").eq("correo", credenciales.correo).eq("contrasena", credenciales.contrasena).execute()
-
         if llamada.data:
             return {"estado": "exito", "usuario": llamada.data[0]}
-        else:
-            return {"estado": "error", "mensaje": "Correo o contraseña incorrectos"}
-
+        return {"estado": "error", "mensaje": "Correo o contraseña incorrectos"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-#  MUESTRE EL HISTORIAL EN LA APP SEGUN USUARIO
-@app.get("/historial/{id_usuario}")
-def obtener_historial(id_usuario: int):
-    with Session(motor) as session:
-        # Buscamos todos los mensajes que pertenezcan a ese ID de usuario
-        statement = select(Mensaje).where(Mensaje.id_usuario == id_usuario)
-        resultados = session.exec(statement).all()
-        
-        return resultados
-
-
-#  Variables para guardar el estado actual
-ESTADO_ACTUAL = {
-    "descripcion": "Esperando la primera conexión del ESP32...",
-    "timestamp": 0
-}
-RUTA_ULTIMA_FOTO = "latest.jpg"
-
-
-def optimizar_desde_bytes(datos_binarios: bytes) -> str:
-    img = Image.open(io.BytesIO(datos_binarios))
-    img.thumbnail((320, 320)) 
-    buffer = io.BytesIO()
-    img.save(buffer, format="JPEG", quality=70)
-    return base64.b64encode(buffer.getvalue()).decode('utf-8')
-
-def procesar_imagen_en_fondo(img_data: bytes):
+@app.post("/mensaje")
+def recibir_mensaje(msg: MensajeRequest):
     try:
-        img_b64 = optimizar_desde_bytes(img_data)
-        
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Actua como guia para un ciego y rellena la siguiente plantilla: peligros:[describir] o objetos relevantes:[listar], obstaculos (si es etiqueta explicala, si es libro leelo)."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}", "detail": "high"}},
-                    ],
-                }
-            ],
-            max_tokens=100,
-            temperatura=0
-        )
-        
-        descripcion = response.choices[0].message.content
-        print(f"📝 Resultado IA:\n{descripcion}")
-        
-        # --- NUEVO: Actualizamos el texto global ---
-        ESTADO_ACTUAL["descripcion"] = descripcion
-        ESTADO_ACTUAL["timestamp"] = time.time()
-        
+        supabase.table("mensaje").insert(msg.model_dump()).execute()
+        return {"estado": "exito"}
     except Exception as e:
-        print(f"❌ Error en IA: {e}")
-        ESTADO_ACTUAL["descripcion"] = "Error al analizar la imagen con OpenAI."
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/upload", response_class=PlainTextResponse)
-async def upload(request: Request, background_tasks: BackgroundTasks):
-    img_data = await request.body()
-    if not img_data:
-        raise HTTPException(status_code=400, detail="No hay datos")
+@app.get("/historial/{id_usuario}")
+def obtener_historial(id_usuario: str):
+    try:
+        resultado = supabase.table("mensaje").select("*").eq("id_usuario", id_usuario).execute()
+        return resultado.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # --- NUEVO: Guardamos la foto física en el PC ---
-    with open(RUTA_ULTIMA_FOTO, "wb") as f:
-        f.write(img_data)
-        
-    # Cambiamos el mensaje temporalmente mientras la IA piensa
-    ESTADO_ACTUAL["descripcion"] = "🧠 Procesando nueva imagen, por favor espera..."
-    ESTADO_ACTUAL["timestamp"] = time.time()
-
-    background_tasks.add_task(procesar_imagen_en_fondo, img_data)
-    return "OK"
-
-@app.get("/latest-info")
-def get_latest_info():
-
-    return JSONResponse(content=ESTADO_ACTUAL)
-
-@app.get("/latest-image")
-def get_latest_image():
-
-    if os.path.exists(RUTA_ULTIMA_FOTO):
-        return FileResponse(RUTA_ULTIMA_FOTO)
-    return HTTPException(status_code=404, detail="Aún no hay fotos")
-
+# --- ENDPOINTS ESP32 ---
 @app.post("/esp32/heartbeat")
-def esp32_heartbeat():
-    """
-    Endpoint que el ESP32 llamará periódicamente (ej. cada 15 segundos)
-    para notificar que sigue encendido y conectado.
-    """
+def esp32_heartbeat(datos: HeartbeatRequest = None):
     ESTADO_ACTUAL["ultimo_latido"] = time.time()
+    if datos and datos.bateria is not None:
+        ESTADO_ACTUAL["bateria"] = datos.bateria
     return {"estado": "ok", "mensaje": "Latido recibido"}
-
 
 @app.get("/esp32/status")
 def obtener_estado_esp32():
-    """
-    Endpoint para que la app móvil o web verifique si el dispositivo está online.
-    Si no ha enviado un latido en los últimos 45 segundos, se considera offline.
-    """
     ahora = time.time()
     ultimo_latido = ESTADO_ACTUAL["ultimo_latido"]
-    
-    # Margen de tiempo tolerable (ej. si el ESP32 avisa cada 15s, 45s es un buen límite)
-    UMBRAL_OFFLINE_SEGUNDOS = 45 
-    
+    UMBRAL_OFFLINE_SEGUNDOS = 45
+
     if ultimo_latido == 0.0:
         activo = False
         mensaje = "El dispositivo nunca se ha conectado."
@@ -202,9 +130,55 @@ def obtener_estado_esp32():
     else:
         activo = False
         mensaje = f"Dispositivo inactivo. Última señal hace {int(ahora - ultimo_latido)} segundos."
-        
+
     return {
         "activo": activo,
         "mensaje": mensaje,
+        "bateria": ESTADO_ACTUAL["bateria"],
         "ultimo_latido_timestamp": ultimo_latido
     }
+
+# --- ENDPOINTS VISIÓN ---
+def procesar_imagen_en_fondo(img_data: bytes):
+    try:
+        img = Image.open(io.BytesIO(img_data))
+        img.thumbnail((320, 320))
+
+        response = client.generate_content([
+            "Actua como guia para un ciego en máximo 2 oraciones. Indica: peligros u obstáculos en la trayectoria, objetos relevantes, semáforos, señales o texto visible.",
+            img
+        ])
+
+        descripcion = response.text
+        print(f"Resultado IA:\n{descripcion}")
+        ESTADO_ACTUAL["descripcion"] = descripcion
+        ESTADO_ACTUAL["timestamp"] = time.time()
+
+    except Exception as e:
+        print(f"Error en IA: {e}")
+        ESTADO_ACTUAL["descripcion"] = "Error al analizar la imagen."
+
+@app.post("/upload", response_class=PlainTextResponse)
+async def upload(request: Request, background_tasks: BackgroundTasks):
+    img_data = await request.body()
+    if not img_data:
+        raise HTTPException(status_code=400, detail="No hay datos")
+    with open(RUTA_ULTIMA_FOTO, "wb") as f:
+        f.write(img_data)
+    ESTADO_ACTUAL["descripcion"] = "Procesando imagen, por favor espera..."
+    ESTADO_ACTUAL["timestamp"] = time.time()
+    background_tasks.add_task(procesar_imagen_en_fondo, img_data)
+    return "OK"
+
+@app.get("/latest-info")
+def get_latest_info():
+    return JSONResponse(content=ESTADO_ACTUAL)
+
+@app.get("/latest-image")
+def get_latest_image():
+    if os.path.exists(RUTA_ULTIMA_FOTO):
+        return FileResponse(RUTA_ULTIMA_FOTO)
+    raise HTTPException(status_code=404, detail="Aún no hay fotos")
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

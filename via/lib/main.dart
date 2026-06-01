@@ -26,8 +26,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ─── HELPER TalkBack ──────────────────────────────────────────────────────────
-
 Future<void> _hablar(FlutterTts tts, String texto) async {
   final talkback =
       WidgetsBinding.instance.accessibilityFeatures.accessibleNavigation;
@@ -614,6 +612,7 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
     _configurarTTS();
     _cargarUltimaDescripcion();
     _cargarHistorial();
+    _cargarEstadoESP32();
     Future.delayed(const Duration(milliseconds: 800), () {
       _hablar(tts,
           'Bienvenido ${widget.nombre}. '
@@ -639,6 +638,19 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         setState(() => estadoActual = data);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _cargarEstadoESP32() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/esp32/status'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          estadoESP32 = data['activo'] == true ? 'Conectado' : 'Sin conexión';
+          bateria = data['bateria'] != null ? '${data['bateria']}%' : '--%';
+        });
       }
     } catch (_) {}
   }
@@ -717,6 +729,7 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
             await _hablar(tts, 'Actualizando.');
             await _cargarUltimaDescripcion();
             await _cargarHistorial();
+            await _cargarEstadoESP32();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -726,7 +739,6 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── HEADER ──
                   ExcludeSemantics(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -753,8 +765,7 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
 
                   // ── ESTADO DISPOSITIVO ──
                   Semantics(
-                    label:
-                        'Estado del dispositivo. ESP32: $estadoESP32. Batería: $bateria',
+                    label: 'Estado del dispositivo. Lentes VIA: $estadoESP32. Batería: $bateria',
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -775,22 +786,43 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Icon(Icons.devices_rounded,
-                                    color: Color(0xFF888780), size: 20),
+                                Icon(
+                                  Icons.devices_rounded,
+                                  color: estadoESP32 == 'Conectado'
+                                      ? const Color(0xFF3B6D11)
+                                      : const Color(0xFF888780),
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 8),
-                                const Text('ESP32',
+                                const Text('Lentes VIA',
                                     style: TextStyle(fontSize: 15)),
                                 const Spacer(),
-                                Text(estadoESP32,
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF888780))),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: estadoESP32 == 'Conectado'
+                                        ? const Color(0xFFEAF3DE)
+                                        : const Color(0xFFF1EFE8),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    estadoESP32,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: estadoESP32 == 'Conectado'
+                                          ? const Color(0xFF3B6D11)
+                                          : const Color(0xFF888780),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(Icons.battery_unknown_rounded,
+                                const Icon(Icons.battery_std_rounded,
                                     color: Color(0xFF888780), size: 20),
                                 const SizedBox(width: 8),
                                 const Text('Batería',
@@ -842,7 +874,6 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Botón reproducir
                   Semantics(
                     label: reproduciendo && indiceReproduciendo == null
                         ? 'Pausar descripción'
@@ -853,10 +884,9 @@ class _VIAHomeScreenState extends State<VIAHomeScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton.icon(
-                        onPressed:
-                            reproduciendo && indiceReproduciendo == null
-                                ? _pausar
-                                : () => _reproducir(descripcion),
+                        onPressed: reproduciendo && indiceReproduciendo == null
+                            ? _pausar
+                            : () => _reproducir(descripcion),
                         icon: Icon(
                           reproduciendo && indiceReproduciendo == null
                               ? Icons.pause_rounded
