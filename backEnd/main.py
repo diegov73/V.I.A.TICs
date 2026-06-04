@@ -1,9 +1,8 @@
 import os
 import io
-import base64
 import time
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
+from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import google.generativeai as genai
@@ -56,15 +55,6 @@ supabase = create_client(
     os.getenv("SUPABASE_KEY")
 )
 
-# --- ESTADO GLOBAL ---
-ESTADO_ACTUAL = {
-    "descripcion": "Esperando la primera conexión del ESP32...",
-    "timestamp": 0,
-    "ultimo_latido": 0.0,
-    "bateria": None
-}
-RUTA_ULTIMA_FOTO = "latest.jpg"
-
 # --- ENDPOINTS USUARIOS ---
 @app.get("/")
 def bienvenida():
@@ -110,75 +100,109 @@ def obtener_historial(id_usuario: str):
 # --- ENDPOINTS ESP32 ---
 @app.post("/esp32/heartbeat")
 def esp32_heartbeat(datos: HeartbeatRequest = None):
-    ESTADO_ACTUAL["ultimo_latido"] = time.time()
-    if datos and datos.bateria is not None:
-        ESTADO_ACTUAL["bateria"] = datos.bateria
-    return {"estado": "ok", "mensaje": "Latido recibido"}
+    try:
+        update_data = {"ultimo_ping": "now()", "conectado": True}
+        if datos and datos.bateria is not None:
+            update_data["bateria"] = datos.bateria
+        # Buscar si existe un dispositivo
+        existente = supabase.table("dispositivo").select("id").limit(1).execute()
+        if existente.data:
+            supabase.table("dispositivo").update(update_data).eq("id", existente.data[0]["id"]).execute()
+        return {"estado": "ok", "mensaje": "Latido recibido"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/esp32/status")
 def obtener_estado_esp32():
-    ahora = time.time()
-    ultimo_latido = ESTADO_ACTUAL["ultimo_latido"]
-    UMBRAL_OFFLINE_SEGUNDOS = 45
+    try:
+        resultado = supabase.table("dispositivo").select("*").limit(1).execute()
+        if not resultado.data:
+            return {"activo": False, "mensaje": "El dispositivo nunca se ha conectado.", "bateria": None}
+        
+        dispositivo = resultado.data[0]
+        ultimo_ping = dispositivo.get("ultimo_ping")
+        bateria = dispositivo.get("bateria")
+        conectado = dispositivo.get("conectado", False)
 
-    if ultimo_latido == 0.0:
-        activo = False
-        mensaje = "El dispositivo nunca se ha conectado."
-    elif (ahora - ultimo_latido) < UMBRAL_OFFLINE_SEGUNDOS:
-        activo = True
-        mensaje = "Dispositivo activo"
-    else:
-        activo = False
-        mensaje = f"Dispositivo inactivo. Última señal hace {int(ahora - ultimo_latido)} segundos."
-
-    return {
-        "activo": activo,
-        "mensaje": mensaje,
-        "bateria": ESTADO_ACTUAL["bateria"],
-        "ultimo_latido_timestamp": ultimo_latido
-    }
+        return {
+            "activo": conectado,
+            "mensaje": "Dispositivo activo" if conectado else "Sin conexión",
+            "bateria": bateria,
+            "ultimo_ping": ultimo_ping
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- ENDPOINTS VISIÓN ---
-def procesar_imagen_en_fondo(img_data: bytes):
+def procesar_imagen_en_fondo(img_data: bytes, nombre_archivo: str):
     try:
         img = Image.open(io.BytesIO(img_data))
         img.thumbnail((320, 320))
 
+        # Subir imagen a Supabase Storage
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=70)
+        buffer.seek(0)
+        supabase.storage.from_("fotos").upload(
+            nombre_archivo,
+            buffer.read(),
+            {"content-type": "image/jpeg", "upsert": "true"}
+        )
+
+        # Procesar con Gemini
+        img_gemini = Image.open(io.BytesIO(img_data))
+        img_gemini.thumbnail((320, 320))
         response = client.generate_content([
             "Actua como guia para un ciego en máximo 2 oraciones. Indica: peligros u obstáculos en la trayectoria, objetos relevantes, semáforos, señales o texto visible.",
-            img
+            img_gemini
         ])
 
         descripcion = response.text
         print(f"Resultado IA:\n{descripcion}")
-        ESTADO_ACTUAL["descripcion"] = descripcion
-        ESTADO_ACTUAL["timestamp"] = time.time()
+
+        # Guardar descripción en Supabase
+        supabase.table("descripcion").insert({
+            "texto": descripcion
+        }).execute()
 
     except Exception as e:
         print(f"Error en IA: {e}")
-        ESTADO_ACTUAL["descripcion"] = "Error al analizar la imagen."
+        supabase.table("descripcion").insert({
+            "texto": "Error al analizar la imagen."
+        }).execute()
 
 @app.post("/upload", response_class=PlainTextResponse)
 async def upload(request: Request, background_tasks: BackgroundTasks):
     img_data = await request.body()
     if not img_data:
         raise HTTPException(status_code=400, detail="No hay datos")
-    with open(RUTA_ULTIMA_FOTO, "wb") as f:
-        f.write(img_data)
-    ESTADO_ACTUAL["descripcion"] = "Procesando imagen, por favor espera..."
-    ESTADO_ACTUAL["timestamp"] = time.time()
-    background_tasks.add_task(procesar_imagen_en_fondo, img_data)
+    background_tasks.add_task(procesar_imagen_en_fondo, img_data, "latest.jpg")
     return "OK"
 
 @app.get("/latest-info")
 def get_latest_info():
-    return JSONResponse(content=ESTADO_ACTUAL)
+    try:
+        resultado = supabase.table("descripcion").select("*").order("timestamp", desc=True).limit(1).execute()
+        if resultado.data:
+            desc = resultado.data[0]
+            return JSONResponse(content={
+                "descripcion": desc["texto"],
+                "timestamp": desc["timestamp"]
+            })
+        return JSONResponse(content={
+            "descripcion": "Esperando la primera conexión del ESP32...",
+            "timestamp": None
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/latest-image")
 def get_latest_image():
-    if os.path.exists(RUTA_ULTIMA_FOTO):
-        return FileResponse(RUTA_ULTIMA_FOTO)
-    raise HTTPException(status_code=404, detail="Aún no hay fotos")
+    try:
+        url = supabase.storage.from_("fotos").get_public_url("latest.jpg")
+        return JSONResponse(content={"url": url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == '__main__':
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
