@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 
-const String baseUrl = 'http://192.168.18.175:8000';
+const String baseUrl = 'https://via-omega-ebon.vercel.app';
 
 void main() {
   runApp(const MyApp());
